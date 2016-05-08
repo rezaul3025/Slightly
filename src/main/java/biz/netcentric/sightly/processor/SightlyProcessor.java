@@ -32,6 +32,13 @@ import org.jsoup.select.Elements;
  */
 public class SightlyProcessor extends HttpServlet {
 
+    /**
+     *
+     * @param req
+     * @param resp
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
@@ -84,7 +91,7 @@ public class SightlyProcessor extends HttpServlet {
 
                 } else if (hasAttr("data-for", attributes)) {
                     String data = element.html();
-                    // System.out.println("tag : " + data);
+                    System.out.println("tag : " + data);
                     String forObj = data.substring(data.indexOf("${") + 2, data.indexOf("}"));
 
                     String forAttr = element.attr("data-for-" + forObj);
@@ -114,7 +121,19 @@ public class SightlyProcessor extends HttpServlet {
             PrintWriter out = resp.getWriter();
             out.write(html);
             out.flush();
-        } catch (ClassNotFoundException | SecurityException | IllegalArgumentException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | InstantiationException ex) {
+        } catch (ClassNotFoundException  ex) {
+            Logger.getLogger(SightlyProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchMethodException ex) {
+            Logger.getLogger(SightlyProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SecurityException ex) {
+            Logger.getLogger(SightlyProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(SightlyProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(SightlyProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(SightlyProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvocationTargetException ex) {
             Logger.getLogger(SightlyProcessor.class.getName()).log(Level.SEVERE, null, ex);
         }
 
