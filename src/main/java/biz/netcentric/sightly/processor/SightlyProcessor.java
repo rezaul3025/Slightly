@@ -26,7 +26,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 /**
- *
+ * Sightly processor Servlet
+ * 
  * @author rkarim
  */
 public class SightlyProcessor extends HttpServlet {
@@ -38,6 +39,7 @@ public class SightlyProcessor extends HttpServlet {
             Class<?> loadedClass = null;
             Map<String, Object> classPropertise = new HashMap<String, Object>();
 
+            //In real application host, port and context root must be configure in property file
             Document doc = Jsoup.connect("http://localhost:8080/Sightly").get();
 
             String html = doc.html();
@@ -46,16 +48,15 @@ public class SightlyProcessor extends HttpServlet {
             if (scriptElement.attr("type").equals("server/javascript")) {
                 String data = scriptElement.html();
                 String fullyQualifiedClassName = data.substring(data.indexOf("Packages") + "Packages".length() + 1, data.indexOf(")"));
-                System.out.println(fullyQualifiedClassName);
+                //System.out.println(fullyQualifiedClassName);
                 loadedClass = Class.forName(fullyQualifiedClassName);
-
-                Object object = loadedClass.getConstructor(String.class, String.class, boolean.class, int.class).newInstance("Tom J", "Jena J", true, 6);
+                //Initialize class using parameterize constructor to get example data, in real application data must come from data sources
+                Object object = loadedClass.getConstructor(String.class, String.class, boolean.class, int.class).newInstance("Tom Fox", "Jena Fox", true, 5);
                 for (Method method : loadedClass.getDeclaredMethods()) {
-
                     if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
                         Object oblist = method.invoke(object);
                         classPropertise.put(method.getName().toLowerCase(), oblist);
-                        System.out.println(oblist);
+                        //System.out.println(oblist);
                     }
 
                 }
@@ -69,37 +70,38 @@ public class SightlyProcessor extends HttpServlet {
                     String tagIf = element.outerHtml();
 
                     String ifAttr = element.attr("data-if");
-                    if (loadedClass.getName().toLowerCase().contains(ifAttr.substring(0, ifAttr.indexOf("."))) && classPropertise.containsKey("is" + ifAttr.substring(ifAttr.indexOf(".") + 1))) {
+                    if (loadedClass != null && loadedClass.getName().toLowerCase().contains(ifAttr.substring(0, ifAttr.indexOf(".")))) {
 
-                        if (Boolean.valueOf(classPropertise.get("is" + ifAttr.substring(ifAttr.indexOf(".") + 1)).toString())) {
+                        if (classPropertise.containsKey("is" + ifAttr.substring(ifAttr.indexOf(".") + 1))) {
 
-                            html = mapClassProperty(tagIf, loadedClass.getName(), classPropertise, html);
-                        } else {
-                            html = html.replace(tagIf, "");
+                            if (Boolean.valueOf(classPropertise.get("is" + ifAttr.substring(ifAttr.indexOf(".") + 1)).toString())) {
+                                html = mapClassProperty(tagIf, loadedClass.getName(), classPropertise, html);
+                            } else {
+                                html = html.replace(tagIf, "");
+                            }
                         }
                     }
 
                 } else if (hasAttr("data-for", attributes)) {
-                    String tagFor = element.outerHtml();
                     String data = element.html();
-                    System.out.println("tag : " + data);
+                    // System.out.println("tag : " + data);
                     String forObj = data.substring(data.indexOf("${") + 2, data.indexOf("}"));
 
                     String forAttr = element.attr("data-for-" + forObj);
 
                     StringBuffer sb = new StringBuffer();
-                    if (loadedClass.getName().toLowerCase().contains(forAttr.split("\\.")[0]) && classPropertise.containsKey("get" + forAttr.split("\\.")[1])) {
+
+                    if (loadedClass != null && loadedClass.getName().toLowerCase().contains(forAttr.split("\\.")[0]) && classPropertise.containsKey("get" + forAttr.split("\\.")[1])) {
                         for (Object ob : (List<Object>) classPropertise.get("get" + forAttr.split("\\.")[1])) {
-                            
-                            sb.append("<div>" + data.substring(0,data.indexOf("${")) + ob + "</div>");
+
+                            sb.append("<div>").append(data.substring(0, data.indexOf("${"))).append(ob).append("</div>");
                         }
-                        System.out.println("tag : " + tagFor);
-                        html = html.replace(tagFor.trim(), "");
-                        element.removeAttr("data-for-" + forObj);
-                        
+
+                        html = html.replace(data, sb);
+
                     }
 
-                } else if (element.children().size() == 0) {
+                } else if (element.children().isEmpty()) {
                     String tag = element.outerHtml();
 
                     if (tag.contains("${")) {
@@ -130,17 +132,12 @@ public class SightlyProcessor extends HttpServlet {
                     String replaceableAttr = temp.substring(1, temp.indexOf("}") + 1);
 
                     String newTag = tag.replace("${" + replaceableAttr, classPropertise.get("get" + attrName).toString());
-                    System.out.println("temp : " + temp + " cc : " + newTag);
+                    //System.out.println("temp : " + temp + " cc : " + newTag);
                     html = html.replace(tag, newTag);
                 }
             }
         }
         return html;
-    }
-
-    public void showFields(Object o) throws ClassNotFoundException {
-        //Class<?> clazz = o.getClass();
-
     }
 
     @Override
